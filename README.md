@@ -1,96 +1,40 @@
-# Alternate Toggler
-Alternate Toggler is a _very_ small plugin for toggling alternate "boolean" values.
+# Cycler
 
-![](https://github.com/rmagatti/readme-assets/blob/main/alternate-toggler.gif)
+Cycle between `false` to `true`, from `public` to `private`, use a function to cycle from 1 to 2 then 2 to 3 and so on, similar to vim's builtin `<C-a>` but can do whatevs in from `lua`.
 
-# Usage
-`:ToggleAlternate` toggles the current word (<cword>) based on a pre-defined map of alternates.
+<!-- Useful for those who remaped tmux <C-a> instead of <C-b> -->
 
-# Installation
-Any plugin manager should do, I use [Packer](https://github.com/wbthomason/packer.nvim).
 
 ```lua
-use {
-  'rmagatti/alternate-toggler',
+return {
+  'evertonse/cycler.nvim',
+  event = 'BufReadPost',
   config = function()
-    require("alternate-toggler").setup {
-      alternates = {
-        ["=="] = "!="
-      }
+    require('cycler').setup {
+      cycles = {
+        { '==', '!=' },
+        { 'true', 'false' },
+        { 'False', 'True' },
+        { 'public', 'private' },
+        { 'disable', 'enable' },
+        { 'if', 'else', 'elseif' },
+        { 'and', 'or' },
+        { 'off', 'on' },
+        { 'yes', 'no' },
+        function(text)
+          local ok, num = pcall(tonumber, text)
+          if ok then
+            return tostring(num + 1)
+          end
+          return nil -- fallback
+        end,
     }
-    
-    vim.keymap.set(
-      "n",
-      "<leader><space>", -- <space><space>
-      "<cmd>lua require('alternate-toggler').toggleAlternate()<CR>"
-    )
+    vim.keymap.set('n', '<C-x>', function()
+      require('cycler').cycle()
+    end)
   end,
-  event = { "BufReadPost" }, -- lazy load after reading a buffer
 }
 ```
 
-# Configuration
-
-### Defaults
-This plugin provides a few pre-defined alternate mappings.
-```lua
-{
-  ["true"] = "false",
-  ["True"] = "False",
-  ["TRUE"] = "FALSE",
-  ["Yes"] = "No",
-  ["YES"] = "NO",
-  ["1"] = "0",
-  ["<"] = ">",
-  ["("] = ")",
-  ["["] = "]",
-  ["{"] = "}",
-  ['"'] = "'",
-  ['""'] = "''",
-  ["+"] = "-",
-	["==="] = "!=="
-}
-```
-
-### Custom
-You can add more alternates through a global config variable:
-```viml
-let g:at_custom_alternates = {'===': '!=='}
-```
-
-Or through calling the `setup` method of the plugin passing in an `alternates` table in the config.
-```lua
-require("alternate-toggler").setup {
-  alternates = {
-    ["==="] = "!==",
-    ["=="] = "!=",
-  }
-}
-```
-:warning: WARNING: anything added here will override existing values if the key of the dict/table is the same as any of the defaults.
-
-# Commands
-Alternate Toggler exposes a single `:ToggleAlternate` command.
-
-**Example mappings:**
-```viml
-nnoremap <leader>ta :ToggleAlternate<CR>
-```
-**OR**
-```viml
-augroup AlternateToggles
-  au!
-  au FileType typescript,viml,lua nnoremap <buffer> <CR> :ToggleAlternate<CR>
-augroup end
-```
-This allows for merely hitting the enter key to toggle an alternate, the caveat is having to specify supported file types manually.
-
-# Compatibility
-Neovim > 0.5
-
-Tested with:
-```
-NVIM v0.5.0-dev+a1ec36f
-Build type: Release
-LuaJIT 2.1.0-beta3
-```
+# References
+This is a fork of you can see on the thing on github
