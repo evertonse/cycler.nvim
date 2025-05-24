@@ -83,7 +83,7 @@ M.cycle = function()
   if word == nil then
     for _, func in ipairs(function_cyclers) do
       --- if a fucntion return nil its not a match
-      word = func(yanked_word)
+      _, word = pcall(func, yanked_word)
       if word ~= nil then
         break
       end
