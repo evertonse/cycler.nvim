@@ -63,20 +63,39 @@ local function snapshot_and_clean()
   vim.o.clipboard = nil
 end
 
-local function restore_snapshot()
+local function restore_snapshot(mode)
   vim.fn.setreg('"', user_register, user_register_mode)
   vim.o.clipboard = user_clipboard
   vim.api.nvim_win_set_cursor(0, cursor)
+
+  if mode == "v" or mode == "V" or mode == "\22" then -- \22 is visual block mode
+    -- TODO: Instead of gv we should actually put the selection exactly covering the new replaced text
+    vim.schedule(function()
+      vim.cmd("normal! gv")
+    end)
+  end
 end
 
 M.cycle = function()
   snapshot_and_clean()
 
-  vim.cmd("normal! yiw")
-  local yanked_word = vim.fn.getreg('"')
+  local mode = vim.fn.mode()
+
+  local yanked_word = nil
+  -- Check if we're in visual mode
+  if mode == "v" or mode == "V" or mode == "\22" then -- \22 is visual block mode
+    -- Get the selected text
+    vim.cmd('normal! "xy')
+    yanked_word = vim.fn.getreg("x")
+  else
+    vim.cmd("normal! yiw")
+    yanked_word = vim.fn.getreg('"')
+  end
+
   local word = alternates[yanked_word]
+
   if yanked_word and yanked_word == " " then
-    restore_snapshot()
+    restore_snapshot(mode)
     return
   end
 
@@ -92,15 +111,21 @@ M.cycle = function()
 
   if word == nil then
     vim.notify("Unsupported cycle value.", vim.log.levels.INFO)
-    restore_snapshot()
+    restore_snapshot(mode)
     return
   end
 
-  xpcall(function()
-    vim.cmd("normal! ciw" .. word)
-  end, error_handler)
+  if mode == "v" or mode == "V" or mode == "\22" then -- \22 is visual block mode
+    xpcall(function()
+      vim.cmd('normal! gv"_c' .. word)
+    end, error_handler)
+  else
+    xpcall(function()
+      vim.cmd("normal! ciw" .. word)
+    end, error_handler)
+  end
 
-  restore_snapshot()
+  restore_snapshot(mode)
   return
 end
 
